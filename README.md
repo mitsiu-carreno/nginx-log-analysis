@@ -24,7 +24,11 @@ docker exec -it spark-master ./bin/spark-submit \
 --conf spark.executor.memoryOverhead=1000m \
 --executor-memory 50g \
 --driver-memory 50g \
-/opt/spark-apps/file.py 2>&1 | tee 0.log
+/opt/spark-apps/file.py 2>&1 | tee logs/0.log
+```
+
+```
+docker exec -it spark-master ./bin/spark-submit --packages org.apache.hadoop:hadoop-aws:3.3.4 --conf spark.executor.memory=100g --conf spark.executor.memoryOverhead=10000m --executor-memory 100g --driver-memory 100g /opt/spark-apps/1-extract.py 2>&1 | tee logs/1.log && docker exec -it spark-master ./bin/spark-submit --packages org.apache.hadoop:hadoop-aws:3.3.4 --conf spark.executor.memory=100g --conf spark.executor.memoryOverhead=10000m --executor-memory 100g --driver-memory 100g /opt/spark-apps/2-train_domain_classifier.py 2>&1 | tee logs/2.log && docker exec -it spark-master ./bin/spark-submit --packages org.apache.hadoop:hadoop-aws:3.3.4 --conf spark.executor.memory=100g --conf spark.executor.memoryOverhead=10000m --executor-memory 100g --driver-memory 100g /opt/spark-apps/3-predict_domain.py 2>&1 | tee logs/3.log
 ```
 
 To update the code in the beefier computer:

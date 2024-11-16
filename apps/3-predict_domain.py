@@ -133,4 +133,6 @@ df_final.write.partitionBy("prediction_domain").parquet(
     "s3a://logs/output/2-predict_domain/"
 )
 
-predictions.groupBy("prediction_domain").count().show(500, truncate=False)
+df_final.groupBy("prediction_domain").count().show(500, truncate=False)
+
+print(f"{df_final.count()}, {len(df_final.columns)}"

@@ -30,9 +30,9 @@ services:
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=65G
-      - SPARK_DRIVER_MEMORY=50G
-      - SPARK_EXECUTOR_MEMORY=65G
+      - SPARK_WORKER_MEMORY=100G
+      - SPARK_DRIVER_MEMORY=100G
+      - SPARK_EXECUTOR_MEMORY=100G
       - SPARK_WORKLOAD=worker
       - SPARK_LOCAL_IP=spark-worker-0
     volumes:
@@ -52,9 +52,9 @@ services:
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=65G
-      - SPARK_DRIVER_MEMORY=50G
-      - SPARK_EXECUTOR_MEMORY=65G
+      - SPARK_WORKER_MEMORY=100G
+      - SPARK_DRIVER_MEMORY=100G
+      - SPARK_EXECUTOR_MEMORY=100G
       - SPARK_WORKLOAD=worker
       - SPARK_LOCAL_IP=spark-worker-1
     volumes:
@@ -74,9 +74,9 @@ services:
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=65G
-      - SPARK_DRIVER_MEMORY=50G
-      - SPARK_EXECUTOR_MEMORY=65G
+      - SPARK_WORKER_MEMORY=100G
+      - SPARK_DRIVER_MEMORY=100G
+      - SPARK_EXECUTOR_MEMORY=100G
       - SPARK_WORKLOAD=worker
       - SPARK_LOCAL_IP=spark-worker-2
     volumes:
@@ -96,9 +96,9 @@ services:
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=65G
-      - SPARK_DRIVER_MEMORY=50G
-      - SPARK_EXECUTOR_MEMORY=65G
+      - SPARK_WORKER_MEMORY=100G
+      - SPARK_DRIVER_MEMORY=100G
+      - SPARK_EXECUTOR_MEMORY=100G
       - SPARK_WORKLOAD=worker
       - SPARK_LOCAL_IP=spark-worker-3
     volumes:
@@ -118,9 +118,9 @@ services:
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=65G
-      - SPARK_DRIVER_MEMORY=50G
-      - SPARK_EXECUTOR_MEMORY=65G
+      - SPARK_WORKER_MEMORY=100G
+      - SPARK_DRIVER_MEMORY=100G
+      - SPARK_EXECUTOR_MEMORY=100G
       - SPARK_WORKLOAD=worker
       - SPARK_LOCAL_IP=spark-worker-4
     volumes:
@@ -140,9 +140,9 @@ services:
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=65G
-      - SPARK_DRIVER_MEMORY=50G
-      - SPARK_EXECUTOR_MEMORY=65G
+      - SPARK_WORKER_MEMORY=100G
+      - SPARK_DRIVER_MEMORY=100G
+      - SPARK_EXECUTOR_MEMORY=100G
       - SPARK_WORKLOAD=worker
       - SPARK_LOCAL_IP=spark-worker-5
     volumes:
@@ -162,9 +162,9 @@ services:
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=65G
-      - SPARK_DRIVER_MEMORY=50G
-      - SPARK_EXECUTOR_MEMORY=65G
+      - SPARK_WORKER_MEMORY=100G
+      - SPARK_DRIVER_MEMORY=100G
+      - SPARK_EXECUTOR_MEMORY=100G
       - SPARK_WORKLOAD=worker
       - SPARK_LOCAL_IP=spark-worker-6
     volumes:

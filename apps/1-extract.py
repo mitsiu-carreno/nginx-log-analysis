@@ -153,3 +153,5 @@ df.write.partitionBy("domain_category").parquet("s3a://logs/output/1-extract/")
 df.groupBy("domain_category").count().show(
     500, truncate=False
 )
+
+print(f"{df.count()}, {len(df.columns)}")
