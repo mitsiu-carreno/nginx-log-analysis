@@ -1,8 +1,4 @@
 from pyspark.sql import SparkSession
-from pyspark.ml.feature import (
-    StringIndexer,
-    OneHotEncoder,
-)
 from pyspark.sql.functions import (
     regexp_extract,
     col,
@@ -141,37 +137,6 @@ df = df.withColumn(
 
 df = df.withColumn("day_of_week", dayofweek(col("fdate_time")))
 
-method_indexer = StringIndexer(inputCol="method", outputCol="method_index")
-method_encoder = OneHotEncoder(inputCol="method_index", outputCol="method_onehot")
-
-domain_indexer = StringIndexer(inputCol="domain", outputCol="domain_index")
-domain_encoder = OneHotEncoder(inputCol="domain_index", outputCol="domain_onehot")
-
-method_i_fit = method_indexer.fit(df)
-domain_i_fit = domain_indexer.fit(df)
-
-df = method_i_fit.transform(df)
-method_e_fit = method_encoder.fit(df)
-df = method_e_fit.transform(df)
-df = domain_i_fit.transform(df)
-domain_e_fit = domain_encoder.fit(df)
-df = domain_e_fit.transform(df)
-
-domain_i_fit.write().overwrite().save("s3a://logs/metadata/domain/indexer")
-domain_e_fit.write().overwrite().save("s3a://logs/metadata/domain/encoder")
-
-method_i_fit.write().overwrite().save("s3a://logs/metadata/method/indexer")
-method_e_fit.write().overwrite().save("s3a://logs/metadata/method/encoder")
-
-
-"""
-from pyspark.ml.feature import StringIndexerModel, OneHotEncoderModel
-domain_i_fit = StringIndexerModel.load("s3a://logs/metadata/domain/indexer")
-domain_e_fit = OneHotEncoderModel.load("s3a://logs/metadata/domain/encoder")
-
-df = domain_i_fit.transform(df)
-df = domain_e_fit.transform(df)
-"""
 
 domains_str = os.getenv("DOMAINS")
 

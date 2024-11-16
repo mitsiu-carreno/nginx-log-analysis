@@ -30,6 +30,12 @@ df_unknown_domains = spark.read.parquet("s3a://logs/output/1-extract/").filter(
     col("domain_category") == "other"
 )
 
+method_i_fit = StringIndexerModel.load("s3a://logs/metadata/method/indexer")
+method_e_fit = OneHotEncoderModel.load("s3a://logs/metadata/method/encoder")
+
+df_unknown_domains = method_i_fit.setHandleInvalid("skip").transform(df_unknown_domains)
+df_unknown_domains = method_e_fit.transform(df_unknown_domains)
+
 df_unknown_domains = df_unknown_domains.withColumn(
     "path_characters", split(col("clean_path"), "")
 )
@@ -67,7 +73,7 @@ vector_assembler = VectorAssembler(
 df_unknown_domains = vector_assembler.transform(df_unknown_domains)
 
 lr_model = LogisticRegressionModel.load(
-    "s3a://logs/models/24-11-15-03_04/domain_classifier"
+    "s3a://logs/models/24-11-16-00_54/domain_classifier"
 )
 
 predictions = lr_model.transform(df_unknown_domains)
@@ -78,7 +84,11 @@ domain_e_fit = OneHotEncoderModel.load("s3a://logs/metadata/domain/encoder")
 domain_labels = domain_i_fit.labels
 print(domain_labels)
 
-predictions.show(50, truncate=False)
+predictions.groupBy("prediction").count().show(500, truncate=False)
+
+predictions.printSchema()
+
+#predictions.select("clean_path", "domain", "prediction", "probability").show(50, truncate=False)
 
 
 def index_to_domain(index):
@@ -114,16 +124,13 @@ df_final = predictions.select(
     "day_of_week",
     "method_index",
     "method_onehot",
-    "domain_index",
-    "domain_onehot",
     "probability",
     "prediction",
     "prediction_domain",
 )
 
-df_final.write.paritionBy("predicton_domain").parquet(
+df_final.write.partitionBy("prediction_domain").parquet(
     "s3a://logs/output/2-predict_domain/"
 )
 
 predictions.groupBy("prediction_domain").count().show(500, truncate=False)
-

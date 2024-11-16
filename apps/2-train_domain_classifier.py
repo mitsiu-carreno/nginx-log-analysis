@@ -1,5 +1,9 @@
 from datetime import datetime
 from pyspark.ml.feature import (
+    StringIndexer,
+    OneHotEncoder,
+)
+from pyspark.ml.feature import (
     NGram,
     HashingTF,
     VectorAssembler,
@@ -28,15 +32,50 @@ df_known = (
     .select(
         "fabstime",
         "day_of_week",
-        "method_onehot",
         "body_bytes_sent",
         "clean_path",
         "clean_query_list",
-        "domain_index",
         "domain_category",
+        "method",
+        "domain",
     )
     .filter(col("domain_category") != "other")
 )
+
+method_indexer = StringIndexer(inputCol="method", outputCol="method_index")
+method_encoder = OneHotEncoder(inputCol="method_index", outputCol="method_onehot")
+
+method_i_fit = method_indexer.fit(df_known)
+df_known = method_i_fit.transform(df_known)
+
+method_e_fit = method_encoder.fit(df_known)
+df_known = method_e_fit.transform(df_known)
+
+domain_indexer = StringIndexer(inputCol="domain", outputCol="domain_index")
+domain_encoder = OneHotEncoder(inputCol="domain_index", outputCol="domain_onehot")
+
+domain_i_fit = domain_indexer.fit(df_known)
+df_known = domain_i_fit.transform(df_known)
+
+domain_e_fit = domain_encoder.fit(df_known)
+df_known = domain_e_fit.transform(df_known)
+
+domain_i_fit.write().overwrite().save("s3a://logs/metadata/domain/indexer")
+domain_e_fit.write().overwrite().save("s3a://logs/metadata/domain/encoder")
+
+method_i_fit.write().overwrite().save("s3a://logs/metadata/method/indexer")
+method_e_fit.write().overwrite().save("s3a://logs/metadata/method/encoder")
+
+
+"""
+from pyspark.ml.feature import StringIndexerModel, OneHotEncoderModel
+domain_i_fit = StringIndexerModel.load("s3a://logs/metadata/domain/indexer")
+domain_e_fit = OneHotEncoderModel.load("s3a://logs/metadata/domain/encoder")
+
+df = domain_i_fit.transform(df)
+df = domain_e_fit.transform(df)
+"""
+
 
 df_known = df_known.withColumn("path_characters", split(col("clean_path"), ""))
 

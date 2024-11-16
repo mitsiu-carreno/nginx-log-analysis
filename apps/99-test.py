@@ -1,22 +1,29 @@
-from dotenv import load_dotenv
+from pyspark.sql import SparkSession
 import os
-import ast
 
-# Load environment variables from the .env file
-#load_dotenv('config.env')
+# Define the two MinIO paths
+path1 = "s3a://logs/output/1-extract/"
+path2 = "s3a://logs/output/2-predict_domain/"
 
-# Read the list from the environment variable
-my_list_str = os.getenv('DOMAINS')
+spark = SparkSession.builder.appName("99-test") \
+    .master("spark://spark-master:7077") \
+    .config("spark.hadoop.fs.s3a.endpoint", os.getenv("S3_HOST")) \
+    .config("spark.hadoop.fs.s3a.access.key", os.getenv("S3_USER")) \
+    .config("spark.hadoop.fs.s3a.secret.key", os.getenv("S3_PASS")) \
+    .config("spark.hadoop.fs.s3a.path.style.access", "true") \
+    .getOrCreate()
 
-print(os.environ)
 
-# Convert the string representation of the list into a Python list
-my_list = ast.literal_eval(my_list_str)  # safely converts string to list
 
-# Now you can use my_list in your Spark job
-for e in my_list:
-    print(e)
-#print(my_list_str)
+# Read the data from both paths
+df1 = spark.read.format("parquet").load(path1)  # or use another format like "csv"
+df2 = spark.read.format("parquet").load(path2)
+
+df_combined = df1.unionByName(df2, allowMissingColumns=True)
+
+# Show the resulting DataFrame
+df_combined.printSchema()
+
 
 """
 from pyspark.sql import SparkSession
