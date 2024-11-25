@@ -1,3 +1,4 @@
+from datetime import datetime
 from pyspark.ml.classification import LogisticRegressionModel
 from pyspark.sql import SparkSession
 from pyspark.ml.feature import (
@@ -26,12 +27,16 @@ spark = SparkSession.builder.appName("3-predict_domain") \
     .config("spark.hadoop.fs.s3a.path.style.access", "true") \
     .getOrCreate()
 
+start_time = datetime.now().strftime("%y-%m-%d-%H_%M")
+
+train_date = "24-11-16-03_25"
+
 df_unknown_domains = spark.read.parquet("s3a://logs/output/1-extract/").filter(
     col("domain_category") == "other"
 )
 
-method_i_fit = StringIndexerModel.load("s3a://logs/metadata/method/indexer")
-method_e_fit = OneHotEncoderModel.load("s3a://logs/metadata/method/encoder")
+method_i_fit = StringIndexerModel.load("s3a://logs/output/2-train_domain_classifier/" + train_date + "/metadata/method/indexer")
+method_e_fit = OneHotEncoderModel.load("s3a://logs/output/2-train_domain_classifier/" + train_date + "/metadata/method/encoder")
 
 df_unknown_domains = method_i_fit.setHandleInvalid("skip").transform(df_unknown_domains)
 df_unknown_domains = method_e_fit.transform(df_unknown_domains)
@@ -73,33 +78,43 @@ vector_assembler = VectorAssembler(
 df_unknown_domains = vector_assembler.transform(df_unknown_domains)
 
 lr_model = LogisticRegressionModel.load(
-    "s3a://logs/models/24-11-16-00_54/domain_classifier"
+    "s3a://logs/output/2-train_domain_classifier/" + train_date + "/model_domain_classifier/"
 )
 
 predictions = lr_model.transform(df_unknown_domains)
 
-domain_i_fit = StringIndexerModel.load("s3a://logs/metadata/domain/indexer")
-domain_e_fit = OneHotEncoderModel.load("s3a://logs/metadata/domain/encoder")
+domain_i_fit = StringIndexerModel.load("s3a://logs/output/2-train_domain_classifier/" + train_date + "/metadata/domain/indexer")
+domain_e_fit = OneHotEncoderModel.load("s3a://logs/output/2-train_domain_classifier/" + train_date + "/metadata/domain/encoder")
 
 domain_labels = domain_i_fit.labels
-print(domain_labels)
+#print(domain_labels)
 
+print("Preliminary")
 predictions.groupBy("prediction").count().show(500, truncate=False)
 
-predictions.printSchema()
-
-#predictions.select("clean_path", "domain", "prediction", "probability").show(50, truncate=False)
+#predictions.printSchema()
 
 
-def index_to_domain(index):
-    return domain_labels[int(index)]
+def index_to_domain(probability):
+    prob_threshold = 0.70
+
+    arr_probabilities = probability.toArray()
+    max_prob_index = arr_probabilities.argmax()
+    max_prob = arr_probabilities[max_prob_index]
+
+    if max_prob > prob_threshold:
+        return domain_labels[max_prob_index]
+    else:
+        return "other"
 
 
 index_to_domain_udf = udf(index_to_domain, StringType())
 
 predictions = predictions.withColumn(
-    "prediction_domain", index_to_domain_udf(predictions["prediction"])
+    "prediction_domain", index_to_domain_udf(predictions["probability"])
 )
+
+#predictions.select("clean_path", "domain", "prediction", "probability", "prediction_domain").filter(col("prediction_domain") == 'other').show(50, truncate=False)
 
 df_final = predictions.select(
     "remote_addr",
@@ -130,9 +145,21 @@ df_final = predictions.select(
 )
 
 df_final.write.partitionBy("prediction_domain").parquet(
-    "s3a://logs/output/2-predict_domain/"
+    "s3a://logs/output/3-predict_domain/"
 )
 
 df_final.groupBy("prediction_domain").count().show(500, truncate=False)
 
-print(f"{df_final.count()}, {len(df_final.columns)}"
+print(f"{df_final.count()}, {len(df_final.columns)}")
+
+log = [
+    ("Start", start_time),
+    ("End", datetime.now().strftime("%y-%m-%d-%H_%M")),
+    ("Volume", f"{df_final.count()}, {len(df_final.columns)}"),
+]
+
+df_log = spark.createDataFrame(log, ["Metric", "Value"])
+
+df_log.write.csv("s3a://logs/output/3-predict_domain/log.csv", header=True)
+
+

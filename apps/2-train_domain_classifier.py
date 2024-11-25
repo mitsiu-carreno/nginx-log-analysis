@@ -27,6 +27,8 @@ spark = SparkSession.builder.appName("2-train_domain_classifier") \
     .config("spark.hadoop.fs.s3a.path.style.access", "true") \
     .getOrCreate()
 
+current_date = datetime.now().strftime("%y-%m-%d-%H_%M")
+
 df_known = (
     spark.read.parquet("s3a://logs/output/1-extract/")
     .select(
@@ -60,17 +62,17 @@ df_known = domain_i_fit.transform(df_known)
 domain_e_fit = domain_encoder.fit(df_known)
 df_known = domain_e_fit.transform(df_known)
 
-domain_i_fit.write().overwrite().save("s3a://logs/metadata/domain/indexer")
-domain_e_fit.write().overwrite().save("s3a://logs/metadata/domain/encoder")
+domain_i_fit.write().overwrite().save("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/domain/indexer")
+domain_e_fit.write().overwrite().save("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/domain/encoder")
 
-method_i_fit.write().overwrite().save("s3a://logs/metadata/method/indexer")
-method_e_fit.write().overwrite().save("s3a://logs/metadata/method/encoder")
+method_i_fit.write().overwrite().save("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/method/indexer")
+method_e_fit.write().overwrite().save("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/method/encoder")
 
 
 """
 from pyspark.ml.feature import StringIndexerModel, OneHotEncoderModel
-domain_i_fit = StringIndexerModel.load("s3a://logs/metadata/domain/indexer")
-domain_e_fit = OneHotEncoderModel.load("s3a://logs/metadata/domain/encoder")
+domain_i_fit = StringIndexerModel.load("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/domain/indexer")
+domain_e_fit = OneHotEncoderModel.load("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/domain/encoder")
 
 df = domain_i_fit.transform(df)
 df = domain_e_fit.transform(df)
@@ -120,18 +122,20 @@ train_data, test_data = df.randomSplit([0.8, 0.2], seed=123)
 lr_model = lr.fit(train_data)
 
 lr_model.save(
-    "s3a://logs/models/"
-    + datetime.now().strftime("%y-%m-%d-%H_%M")
-    + "/domain_classifier"
+    "s3a://logs/output/2-train_domain_classifier/" + current_date + "/model_domain_classifier/"
 )
+#mc cp -r myminio/logs/models/24-11-16-03_25/domain_classifier/data myminio/logs/output/2-train_domain_classifier/24-11-16-03_25/model_domain_classifier/
+#mc cp -r myminio/logs/models/24-11-16-03_25/domain_classifier/metadata myminio/logs/output/2-train_domain_classifier/24-11-16-03_25/model_domain_classifier/
+
+#mc cp -r myminio/logs/metadata/ myminio/logs/output/2-train_domain_classifier/24-11-16-03_25/metadata/
 
 predictions = lr_model.transform(test_data)
 
 evaluator = MulticlassClassificationEvaluator(
     labelCol="domain_index", predictionCol="prediction", metricName="accuracy"
 )
-accuracy = evaluator.evaluate(predictions)
-print(f"Test Accuracy: {accuracy}")
+t_accuracy = evaluator.evaluate(predictions)
+print(f"Test Accuracy: {t_accuracy}")
 
 
 # Evaluate the model
@@ -145,8 +149,8 @@ print(f"Accuracy: {accuracy}")
 evaluator_precision = MulticlassClassificationEvaluator(
     labelCol="domain_index", predictionCol="prediction", metricName="weightedPrecision"
 )
-precision = evaluator_precision.evaluate(predictions)
-print(f"Weighted Precision: {precision}")
+w_precision = evaluator_precision.evaluate(predictions)
+print(f"Weighted Precision: {w_precision}")
 # weightedPrecision: Precision considering class imbalance.
 
 # Create the evaluator with weightedRecall
@@ -155,8 +159,8 @@ evaluator_recall = MulticlassClassificationEvaluator(
 )
 
 # Evaluate the recall
-recall = evaluator_recall.evaluate(predictions)
-print(f"Weighted Recall: {recall}")
+w_recall = evaluator_recall.evaluate(predictions)
+print(f"Weighted Recall: {w_recall}")
 # weightedRecall: Recall considering class imbalance.
 
 # Create the evaluator with f1 score
@@ -170,8 +174,22 @@ print(f"F1 Score: {f1_score}")
 # f1: F1 score, which is the harmonic mean of precision and recall.
 
 df_known.printSchema()
-print(f"Test Accuracy: {accuracy}")
+print(f"Test Accuracy: {t_accuracy}")
 print(f"Accuracy: {accuracy}")
-print(f"Weighted Precision: {precision}")
-print(f"Weighted Recall: {recall}")
+print(f"Weighted Precision: {w_precision}")
+print(f"Weighted Recall: {w_recall}")
 print(f"F1 Score: {f1_score}")
+
+log = [
+    ("Start", current_date),
+    ("End", datetime.now().strftime("%y-%m-%d-%H_%M")),
+    ("Test Accuracy", t_accuracy),
+    ("Accuracy", accuracy),
+    ("Weighted Precision", w_precision),
+    ("Weighted Recall", w_recall),
+    ("F1 Score", f1_score),
+]
+
+df_log = spark.createDataFrame(log, ["Metric", "Value"])
+
+df_log.write.csv("s3a://logs/output/2-train_domain_classifier/" + current_date + "/log.csv", header=True)

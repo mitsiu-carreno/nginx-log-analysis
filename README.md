@@ -70,6 +70,7 @@ pylint file.py
 ```bash
 mc alias set myminio http://minio:9000 accesskey secretkey
 mc cp -r myminio/logs/output/extract/domain_category=unknown myminio/logs/output/extract/domain_category=other
+mc du -r myminio/logs/output/
 ```
 
 # Usefull spark code snippets:

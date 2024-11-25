@@ -25,6 +25,9 @@ spark = SparkSession.builder.appName("1-extract") \
     .config("spark.hadoop.fs.s3a.path.style.access", "true") \
     .getOrCreate()
 
+start_time = datetime.now().strftime("%y-%m-%d-%H_%M")
+
+
 df_raw = spark.read.text("s3a://logs/input/**")
 
 log_columns = [
@@ -155,3 +158,14 @@ df.groupBy("domain_category").count().show(
 )
 
 print(f"{df.count()}, {len(df.columns)}")
+
+log = [
+    ("Start", start_time),
+    ("End", datetime.now().strftime("%y-%m-%d-%H_%M")),
+    ("Volume", f"{df.count()}, {len(df.columns)}"),
+]
+
+df_log = spark.createDataFrame(log, ["Metric", "Value"])
+
+df_log.write.csv("s3a://logs/output/1-extract/log.csv", header=True)
+

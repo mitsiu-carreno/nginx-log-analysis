@@ -17,6 +17,8 @@ spark = SparkSession.builder.appName("99-test") \
 
 # Read the data from both paths
 df1 = spark.read.format("parquet").load(path1)  # or use another format like "csv"
+df1.printSchema()
+print("=======================")
 df2 = spark.read.format("parquet").load(path2)
 
 df_combined = df1.unionByName(df2, allowMissingColumns=True)
