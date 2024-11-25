@@ -66,6 +66,6 @@ log = [
 
 df_log = spark.createDataFrame(log, ["Metric", "Value"])
 
-df_log.write.csv("s3a://logs/output/4-domain_ground_truth/log.csv", header=True)
+df_log.coalesce(1).write.csv("s3a://logs/output/log/4-domain_ground_truth", header=True)
 
 

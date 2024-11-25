@@ -192,4 +192,4 @@ log = [
 
 df_log = spark.createDataFrame(log, ["Metric", "Value"])
 
-df_log.write.csv("s3a://logs/output/2-train_domain_classifier/" + current_date + "/log.csv", header=True)
+df_log.coalesce(1).write.csv("s3a://logs/output/log/2-train_domain_classifier/" + current_date, header=True)

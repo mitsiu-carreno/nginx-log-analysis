@@ -167,5 +167,5 @@ log = [
 
 df_log = spark.createDataFrame(log, ["Metric", "Value"])
 
-df_log.write.csv("s3a://logs/output/1-extract/log.csv", header=True)
+df_log.coalesce(1).write.csv("s3a://logs/output/log/1-extract", header=True)
 
