@@ -76,6 +76,8 @@ df_parsed = df_parsed.withColumn(
 
 df_parsed = df_parsed.drop("gzip_ratio")
 
+df_parsed = df_parsed.dropDuplicates()
+
 
 # Change null and empty to nan
 def to_null(c):
