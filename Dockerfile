@@ -17,7 +17,7 @@ RUN cd /tmp/Python-${PYTHON_VERSION} \
 
 RUN python3 -m pip install pip
 
-RUN pip3 install numpy pandas scipy scikit-learn python-dotenv
+RUN pip3 install numpy pandas scipy scikit-learn python-dotenv pyarrow
 
 
 # Fix the value of PYTHONHASHSEED
