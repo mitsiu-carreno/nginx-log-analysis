@@ -1,4 +1,4 @@
-name := "Simple Project"
+name := "Anomaly detection"
 
 version := "1.0"
 

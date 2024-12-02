@@ -2,3 +2,10 @@
 minio-data
 data
 *.swp
+
+apps/*/project/*
+
+apps/*/target/*
+!apps/*/target/scala-*/
+apps/*/target/scala-*/*
+!apps/*/target/scala-*/*.jar
