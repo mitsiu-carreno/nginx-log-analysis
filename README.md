@@ -52,6 +52,10 @@ sbt package
 podman exec -it spark-master ./bin/spark-submit --class "ScalaApp" --packages org.apache.hadoop:hadoop-aws:3.3.4 /opt/spark-apps/98-sbt-template/target/scala-2.12/anomaly-detection_2.12-1.0.jar
 ```
 
+```bash
+podman exec -it spark-master ./bin/spark-shell  --packages org.apache.hadoop:hadoop-aws:3.3.4,com.linkedin.isolation-forest:isolation-forest_3.5.0_2.12:3.0.6 --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 --conf spark.hadoop.fs.s3a.access.key=accesskey --conf spark.hadoop.fs.s3a.secret.key=secretkey --conf spark.hadoop.fs.s3a.path.style.access=true --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+```
+
 To update the code in the beefier computer:
 ```bash
 scp apps/*  designar4@192.168.100.20:/home/designar4/spark-cluster/compose/apps/
