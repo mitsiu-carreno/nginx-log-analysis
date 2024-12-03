@@ -53,7 +53,7 @@ podman exec -it spark-master ./bin/spark-submit --class "ScalaApp" --packages or
 ```
 
 ```bash
-podman exec -it spark-master ./bin/spark-shell  --packages org.apache.hadoop:hadoop-aws:3.3.4,com.linkedin.isolation-forest:isolation-forest_3.5.0_2.12:3.0.6 --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 --conf spark.hadoop.fs.s3a.access.key=accesskey --conf spark.hadoop.fs.s3a.secret.key=secretkey --conf spark.hadoop.fs.s3a.path.style.access=true --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+podman exec -it spark-master ./bin/spark-shell  --packages org.apache.hadoop:hadoop-aws:3.3.4,com.linkedin.isolation-forest:isolation-forest_3.5.0_2.12:3.0.6,org.elasticsearch:elasticsearch-spark-30_2.12:8.6.2 --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 --conf spark.hadoop.fs.s3a.access.key=accesskey --conf spark.hadoop.fs.s3a.secret.key=secretkey --conf spark.hadoop.fs.s3a.path.style.access=true --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem --conf spark.es.nodes="es01" --conf spark.es.port="9200" --conf spark.es.nodes.wan.only="true"
 ```
 
 To update the code in the beefier computer:
@@ -129,7 +129,12 @@ df.filter(
 ).groupBy("domain").count().show(truncate=False)
 ```
 
-```python
+```scala
+import org.apache.spark.sql.types._
+
+val df2 = df.withColumn("anomaly_bool", col("anomaly").cast(BooleanType))
+
+df2.select("fabstime", "status", "body_bytes_sent", "outlierScore", "anomaly_bool").write.format("es").mode("overwrite").save("anom")
 ```
 
 ```python
