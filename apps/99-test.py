@@ -14,7 +14,7 @@ spark = SparkSession.builder.appName("99-test") \
     .getOrCreate()
 
 
-
+"""
 import seaborn as sns
 import matplotlib.pyplot as plt
 import boto3
@@ -23,9 +23,9 @@ from io import BytesIO
 # 1. Generate a Seaborn plot
 # Example: A simple heatmap
 data = sns.load_dataset("flights")
-pivot_data = data.pivot("month", "year", "passengers")
+pivot_data = data.pivot(index="month", columns="year", values="passengers")
 plt.figure(figsize=(10, 8))
-sns.heatmap(pivot_data, annot=True, fmt="d", cmap='coolwarm')
+sns.heatmap(pivot_data, annot=True, fmt="g", cmap='coolwarm')
 
 # 2. Save the plot to a BytesIO object (in-memory)
 image_stream = BytesIO()
@@ -51,7 +51,7 @@ minio_client.upload_fileobj(image_stream, bucket_name, file_name)
 image_stream.close()
 
 print(f"Plot successfully uploaded to MinIO at {bucket_name}/{file_name}")
-
+"""
 
 """
 # Read the data from both paths

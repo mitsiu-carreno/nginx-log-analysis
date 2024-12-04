@@ -19,6 +19,9 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import boto3
+from io import BytesIO
+
 
 spark = SparkSession.builder.appName("2-train_domain_classifier") \
     .master("spark://spark-master:7077") \
@@ -29,6 +32,13 @@ spark = SparkSession.builder.appName("2-train_domain_classifier") \
     .getOrCreate()
 
 current_date = datetime.now().strftime("%y-%m-%d-%H_%M")
+
+s3_client = boto3.client(
+    's3',
+    endpoint_url= os.getenv("S3_HOST"),
+    aws_access_key_id= os.getenv("S3_USER"),
+    aws_secret_access_key= os.getenv("S3_PASS"),
+)
 
 df_known = (
     spark.read.parquet("s3a://logs/output/1-extract/")
@@ -113,21 +123,70 @@ lr_model.save(
 predictions = lr_model.transform(test_data)
 
 # Confussion matrix
+
+total_count = predictions.count()
+
 confusion_matrix = predictions.groupBy("domain_index", "prediction").count()
+
+confusion_matrix = confusion_matrix.select(
+    col("domain_index").cast("int").alias("domain_index"),
+    col("prediction").cast("int").alias("prediction"),
+    col("count"),
+    (confusion_matrix["count"] / total_count * 100).alias("percentage")
+)
+
+confusion_matrix.coalesce(1).write.csv("s3a://logs/output/2-train_domain_classifier/" + current_date + "/confusion_matrix_raw", header=True)
 
 confusion_matrix_pd = confusion_matrix.toPandas()
 
-confusion_matrix_pivot = confusion_matrix_pd.pivot(index='domain_index', columns='prediction', values='count').fillna(0)
+##### Count Confussion matrix
+
+confusion_matrix_count_pivot = confusion_matrix_pd.pivot(index='domain_index', columns='prediction', values='count').fillna(0)
 
 plt.figure(figsize=(15, 12))
-sns.heatmap(confusion_matrix_pivot, annot=True, fmt="g", cmap="Blues", xticklabels=True, yticklabels=True)
+sns.heatmap(confusion_matrix_count_pivot, annot=True, fmt="g", cmap="Blues", xticklabels=True, yticklabels=True)
 plt.title('Matriz de confusión')
 plt.xlabel('Dominio asignado')
 plt.ylabel('Dominio real')
-#plt.show()
 
-plt.savefig("s3a://logs/output/2-train_domain_classifier/" + current_date + "/confussion_matrix.png", bbox_inches='tight')
+count_matrix = BytesIO()
 
+plt.savefig(count_matrix, format='png', bbox_inches='tight')
+
+count_matrix.seek(0) #rewind stream to the beginning
+
+s3_client.upload_fileobj(count_matrix, "logs", "output/2-train_domain_classifier/" + current_date + "/confusion_matrix_count.png")
+
+count_matrix.close()
+
+plt.clf()
+
+##### Percentage Confussion matrix
+
+confusion_matrix_percen_pivot = confusion_matrix_pd.pivot(index='domain_index', columns='prediction', values='percentage').fillna(0)
+
+
+plt.figure(figsize=(15, 12))
+sns.heatmap(confusion_matrix_percen_pivot, annot=True, fmt=".1%", cmap="Blues", xticklabels=True, yticklabels=True)
+plt.title('Matriz de confusión')
+plt.xlabel('Dominio asignado')
+plt.ylabel('Dominio real')
+
+percen_matrix = BytesIO()
+
+plt.savefig(percen_matrix, format='png', bbox_inches='tight')
+
+percen_matrix.seek(0) #rewind stream to the beginning
+
+s3_client.upload_fileobj(percen_matrix, "logs", "output/2-train_domain_classifier/" + current_date + "/confusion_matrix_percen.png")
+
+percen_matrix.close()
+
+plt.clf()
+
+percen_matrix.close()
+
+### Evaluate model
 
 evaluator = MulticlassClassificationEvaluator(
     labelCol="domain_index", predictionCol="prediction", metricName="accuracy"
