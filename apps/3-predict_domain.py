@@ -17,6 +17,7 @@ from pyspark.sql.functions import (
 )
 from pyspark.sql.types import StringType
 import os
+import sys
 
 
 spark = SparkSession.builder.appName("3-predict_domain") \
@@ -27,9 +28,19 @@ spark = SparkSession.builder.appName("3-predict_domain") \
     .config("spark.hadoop.fs.s3a.path.style.access", "true") \
     .getOrCreate()
 
-start_time = datetime.now().strftime("%y-%m-%d-%H_%M")
+train_date = None
 
-train_date = "24-11-16-03_25"
+if len(sys.argv) > 1:
+    train_date = sys.argv[1]
+else:
+    print()
+    print("-"*200)
+    print("No train date provided for path:")
+    print("s3a://logs/output/2-train_domain_classifier/${train_date}/model_domain_classifier/")
+    print("-"*200)
+    spark.stop()
+
+start_time = datetime.now().strftime("%y-%m-%d-%H_%M")
 
 df_unknown_domains = spark.read.parquet("s3a://logs/output/1-extract/").filter(
     col("domain_category") == "other"
