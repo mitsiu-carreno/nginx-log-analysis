@@ -1,12 +1,10 @@
 from datetime import datetime
 from pyspark.ml.feature import (
-    StringIndexer,
-    OneHotEncoder,
-)
-from pyspark.ml.feature import (
     NGram,
     HashingTF,
     VectorAssembler,
+    StringIndexerModel,
+    OneHotEncoderModel,
 )
 from pyspark.sql import SparkSession
 from pyspark.ml.classification import LogisticRegression
@@ -18,6 +16,9 @@ from pyspark.sql.functions import (
     transform,
 )
 import os
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 spark = SparkSession.builder.appName("2-train_domain_classifier") \
     .master("spark://spark-master:7077") \
@@ -44,39 +45,19 @@ df_known = (
     .filter(col("domain_category") != "other")
 )
 
-method_indexer = StringIndexer(inputCol="method", outputCol="method_index")
-method_encoder = OneHotEncoder(inputCol="method_index", outputCol="method_onehot")
+domain_i_fit = StringIndexerModel.load("s3a://logs/output/1-extract-metadata/domain/indexer")
+#domain_e_fit = OneHotEncoderModel.load("s3a://logs/output/1-extract-metadata/domain/encoder")
 
-method_i_fit = method_indexer.fit(df_known)
+method_i_fit = StringIndexerModel.load("s3a://logs/output/1-extract-metadata/method/indexer")
+method_e_fit = OneHotEncoderModel.load("s3a://logs/output/1-extract-metadata/method/encoder")
+
+df_known = domain_i_fit.transform(df_known)
+#df_known = domain_e_fit.transform(df_known)
+
 df_known = method_i_fit.transform(df_known)
-
-method_e_fit = method_encoder.fit(df_known)
 df_known = method_e_fit.transform(df_known)
 
-domain_indexer = StringIndexer(inputCol="domain", outputCol="domain_index")
-domain_encoder = OneHotEncoder(inputCol="domain_index", outputCol="domain_onehot")
 
-domain_i_fit = domain_indexer.fit(df_known)
-df_known = domain_i_fit.transform(df_known)
-
-domain_e_fit = domain_encoder.fit(df_known)
-df_known = domain_e_fit.transform(df_known)
-
-domain_i_fit.write().overwrite().save("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/domain/indexer")
-domain_e_fit.write().overwrite().save("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/domain/encoder")
-
-method_i_fit.write().overwrite().save("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/method/indexer")
-method_e_fit.write().overwrite().save("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/method/encoder")
-
-
-"""
-from pyspark.ml.feature import StringIndexerModel, OneHotEncoderModel
-domain_i_fit = StringIndexerModel.load("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/domain/indexer")
-domain_e_fit = OneHotEncoderModel.load("s3a://logs/output/2-train_domain_classifier/" + current_date + "/metadata/domain/encoder")
-
-df = domain_i_fit.transform(df)
-df = domain_e_fit.transform(df)
-"""
 
 
 df_known = df_known.withColumn("path_characters", split(col("clean_path"), ""))
@@ -130,6 +111,23 @@ lr_model.save(
 #mc cp -r myminio/logs/metadata/ myminio/logs/output/2-train_domain_classifier/24-11-16-03_25/metadata/
 
 predictions = lr_model.transform(test_data)
+
+# Confussion matrix
+confusion_matrix = predictions.groupBy("domain_index", "prediction").count()
+
+confusion_matrix_pd = confusion_matrix.toPandas()
+
+confusion_matrix_pivot = confusion_matrix_pd.pivot(index='domain_index', columns='prediction', values='count').fillna(0)
+
+plt.figure(figsize=(15, 12))
+sns.heatmap(confusion_matrix_pivot, annot=True, fmt="g", cmap="Blues", xticklabels=True, yticklabels=True)
+plt.title('Matriz de confusión')
+plt.xlabel('Dominio asignado')
+plt.ylabel('Dominio real')
+#plt.show()
+
+plt.savefig("s3a://logs/output/2-train_domain_classifier/" + current_date + "/confussion_matrix.png", bbox_inches='tight')
+
 
 evaluator = MulticlassClassificationEvaluator(
     labelCol="domain_index", predictionCol="prediction", metricName="accuracy"

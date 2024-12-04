@@ -145,3 +145,9 @@ df2.select("fabstime", "status", "body_bytes_sent", "outlierScore", "anomaly_boo
 
 ```python
 ```
+
+ToDo:
+- [ ] Domain and method encoder from all data
+- [ ] Confussion matrix in regression
+- [ ] Anomally execution
+- [ ] Anomally viz  

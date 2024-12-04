@@ -35,8 +35,8 @@ df_unknown_domains = spark.read.parquet("s3a://logs/output/1-extract/").filter(
     col("domain_category") == "other"
 )
 
-method_i_fit = StringIndexerModel.load("s3a://logs/output/2-train_domain_classifier/" + train_date + "/metadata/method/indexer")
-method_e_fit = OneHotEncoderModel.load("s3a://logs/output/2-train_domain_classifier/" + train_date + "/metadata/method/encoder")
+method_i_fit = StringIndexerModel.load("s3a://logs/output/1-extract-metadata/method/indexer")
+method_e_fit = OneHotEncoderModel.load("s3a://logs/output/1-extract-metadata/method/encoder")
 
 df_unknown_domains = method_i_fit.setHandleInvalid("skip").transform(df_unknown_domains)
 df_unknown_domains = method_e_fit.transform(df_unknown_domains)
@@ -83,8 +83,8 @@ lr_model = LogisticRegressionModel.load(
 
 predictions = lr_model.transform(df_unknown_domains)
 
-domain_i_fit = StringIndexerModel.load("s3a://logs/output/2-train_domain_classifier/" + train_date + "/metadata/domain/indexer")
-domain_e_fit = OneHotEncoderModel.load("s3a://logs/output/2-train_domain_classifier/" + train_date + "/metadata/domain/encoder")
+domain_i_fit = StringIndexerModel.load("s3a://logs/output/1-extract-metadata/domain/indexer")
+#domain_e_fit = OneHotEncoderModel.load("s3a://logs/output/1-extract-metadata/domain/encoder")
 
 domain_labels = domain_i_fit.labels
 #print(domain_labels)

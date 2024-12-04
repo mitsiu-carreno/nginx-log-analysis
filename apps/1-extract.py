@@ -11,6 +11,10 @@ from pyspark.sql.functions import (
     dayofweek,
 )
 from pyspark.sql.types import IntegerType, StringType, ArrayType, TimestampType
+from pyspark.ml.feature import (
+    StringIndexer,
+    OneHotEncoder,
+)
 import urllib.parse
 from datetime import datetime
 import time
@@ -153,6 +157,37 @@ df = df.withColumn(
 )
 
 df.write.partitionBy("domain_category").parquet("s3a://logs/output/1-extract/")
+
+
+method_indexer = StringIndexer(inputCol="method", outputCol="method_index")
+method_encoder = OneHotEncoder(inputCol="method_index", outputCol="method_onehot")
+
+method_i_fit = method_indexer.fit(df)
+df = method_i_fit.transform(df)
+method_e_fit = method_encoder.fit(df)
+
+domain_indexer = StringIndexer(inputCol="domain", outputCol="domain_index")
+domain_encoder = OneHotEncoder(inputCol="domain_index", outputCol="domain_onehot")
+
+domain_i_fit = domain_indexer.fit(df)
+df = domain_i_fit.transform(df)
+domain_e_fit = domain_encoder.fit(df)
+
+domain_i_fit.write().overwrite().save("s3a://logs/output/1-extract-metadata/domain/indexer")
+domain_e_fit.write().overwrite().save("s3a://logs/output/1-extract-metadata/domain/encoder")
+
+method_i_fit.write().overwrite().save("s3a://logs/output/1-extract-metadata/method/indexer")
+method_e_fit.write().overwrite().save("s3a://logs/output/1-extract-metadata/method/encoder")
+
+
+"""
+from pyspark.ml.feature import StringIndexerModel, OneHotEncoderModel
+domain_i_fit = StringIndexerModel.load("s3a://logs/output/1-extract-metadata/domain/indexer")
+domain_e_fit = OneHotEncoderModel.load("s3a://logs/output/1-extract-metadata/domain/encoder")
+
+df = domain_i_fit.transform(df)
+df = domain_e_fit.transform(df)
+"""
 
 
 df.groupBy("domain_category").count().show(

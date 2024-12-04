@@ -15,6 +15,45 @@ spark = SparkSession.builder.appName("99-test") \
 
 
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+import boto3
+from io import BytesIO
+
+# 1. Generate a Seaborn plot
+# Example: A simple heatmap
+data = sns.load_dataset("flights")
+pivot_data = data.pivot("month", "year", "passengers")
+plt.figure(figsize=(10, 8))
+sns.heatmap(pivot_data, annot=True, fmt="d", cmap='coolwarm')
+
+# 2. Save the plot to a BytesIO object (in-memory)
+image_stream = BytesIO()
+plt.savefig(image_stream, format='png', bbox_inches='tight')  # Save to in-memory stream
+image_stream.seek(0)  # Rewind the BytesIO stream to the beginning
+
+# 3. Connect to MinIO using boto3
+minio_client = boto3.client(
+    's3', 
+    endpoint_url='https://your-minio-endpoint',  # Replace with your MinIO endpoint
+    aws_access_key_id='your-access-key',        # Replace with your MinIO access key
+    aws_secret_access_key='your-secret-key',    # Replace with your MinIO secret key
+    region_name='us-east-1'                      # Replace with your region (if needed)
+)
+
+# 4. Upload the image to MinIO (replace 'your-bucket' with your bucket name)
+bucket_name = 'your-bucket-name'  # Replace with your MinIO bucket name
+file_name = 'output/plots/seaborn_heatmap.png'  # Path to save the file in MinIO
+
+minio_client.upload_fileobj(image_stream, bucket_name, file_name)
+
+# Close the stream after uploading
+image_stream.close()
+
+print(f"Plot successfully uploaded to MinIO at {bucket_name}/{file_name}")
+
+
+"""
 # Read the data from both paths
 df1 = spark.read.format("parquet").load(path1)  # or use another format like "csv"
 df1.printSchema()
@@ -25,7 +64,7 @@ df_combined = df1.unionByName(df2, allowMissingColumns=True)
 
 # Show the resulting DataFrame
 df_combined.printSchema()
-
+"""
 
 """
 from pyspark.sql import SparkSession
