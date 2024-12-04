@@ -132,7 +132,7 @@ confusion_matrix = confusion_matrix.select(
     col("domain_index").cast("int").alias("domain_index"),
     col("prediction").cast("int").alias("prediction"),
     col("count"),
-    (confusion_matrix["count"] / total_count * 100).alias("percentage")
+    (confusion_matrix["count"] / total_count ).alias("percentage")
 )
 
 confusion_matrix.coalesce(1).write.csv("s3a://logs/output/2-train_domain_classifier/" + current_date + "/confusion_matrix_raw", header=True)
@@ -167,7 +167,7 @@ confusion_matrix_percen_pivot = confusion_matrix_pd.pivot(index='domain_index', 
 
 
 plt.figure(figsize=(15, 12))
-sns.heatmap(confusion_matrix_percen_pivot, annot=True, fmt=".1%", cmap="Blues", xticklabels=True, yticklabels=True)
+sns.heatmap(confusion_matrix_percen_pivot, annot=True, fmt=".2%", cmap="Blues", xticklabels=True, yticklabels=True)
 plt.title('Matriz de confusión')
 plt.xlabel('Dominio asignado')
 plt.ylabel('Dominio real')
