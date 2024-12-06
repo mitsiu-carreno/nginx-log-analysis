@@ -137,7 +137,8 @@ val df2 = df.withColumn("anomaly_bool", col("anomaly").cast(BooleanType))
 df2.select("fabstime", "status", "body_bytes_sent", "outlierScore", "anomaly_bool").write.format("es").mode("overwrite").save("anom")
 ```
 
-```python
+```scala
+df.select("clean_path").filter(col("clean_path").contains("drupal_rce")).show(truncate=false)
 ```
 
 ```python
@@ -147,7 +148,8 @@ df2.select("fabstime", "status", "body_bytes_sent", "outlierScore", "anomaly_boo
 ```
 
 ToDo:
-- [ ] Domain and method encoder from all data
-- [ ] Confussion matrix in regression
+- [X] Domain and method encoder from all data
+- [X] Confussion matrix in regression
 - [ ] Anomally execution
+- [ ] es timestamps
 - [ ] Anomally viz  
