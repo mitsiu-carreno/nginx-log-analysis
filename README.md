@@ -49,7 +49,7 @@ sbt package
 ```
 
 ```bash
-podman exec -it spark-master ./bin/spark-submit --class "ScalaApp" --packages org.apache.hadoop:hadoop-aws:3.3.4 /opt/spark-apps/98-sbt-template/target/scala-2.12/anomaly-detection_2.12-1.0.jar
+podman exec -it spark-master ./bin/spark-submit --class "ScalaApp" --packages org.apache.hadoop:hadoop-aws:3.3.4,com.linkedin.isolation-forest:isolation-forest_3.5.0_2.12:3.0.6 /opt/spark-apps/5-detect/target/scala-2.12/anomaly-detection_2.12-1.0.jar acuerdo286.designa.mx 2>&1 | tee logs/5_286.log
 ```
 
 ```bash
