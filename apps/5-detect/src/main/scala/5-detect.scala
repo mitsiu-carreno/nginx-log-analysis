@@ -58,7 +58,7 @@ object ScalaApp {
 
     val df_time = df.withColumn(
       "es_time", 
-      date_format(col("fdate_time"), "yyyy-MM-dd'T'HH:mm:ss:SSSZ")
+      date_format(col("fdate_time"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     )
 
 

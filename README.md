@@ -50,7 +50,11 @@ sbt package
 
 ```bash
 podman exec -it spark-master ./bin/spark-submit --class "ScalaApp" --packages org.apache.hadoop:hadoop-aws:3.3.4,com.linkedin.isolation-forest:isolation-forest_3.5.0_2.12:3.0.6 /opt/spark-apps/5-detect/target/scala-2.12/anomaly-detection_2.12-1.0.jar acuerdo286.designa.mx 2>&1 | tee logs/5_286.log
+
+
+docker exec -it spark-master ./bin/spark-submit --class "ScalaApp" --packages org.apache.hadoop:hadoop-aws:3.3.4,com.linkedin.isolation-forest:isolation-forest_3.5.0_2.12:3.0.6 --conf spark.executor.memory=100g --conf spark.executor.memoryOverhead=10000m --executor-memory 100g --driver-memory 100g /opt/spark-apps/5-detect/target/scala-2.12/anomaly-detection_2.12-1.0.jar acuerdo286.designa.mx 2>&1 | tee logs/5_286.log
 ```
+
 
 ```bash
 podman exec -it spark-master ./bin/spark-shell  --packages org.apache.hadoop:hadoop-aws:3.3.4,com.linkedin.isolation-forest:isolation-forest_3.5.0_2.12:3.0.6,org.elasticsearch:elasticsearch-spark-30_2.12:8.6.2 --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 --conf spark.hadoop.fs.s3a.access.key=accesskey --conf spark.hadoop.fs.s3a.secret.key=secretkey --conf spark.hadoop.fs.s3a.path.style.access=true --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem --conf spark.es.nodes="es01" --conf spark.es.port="9200" --conf spark.es.nodes.wan.only="true"
